@@ -24,4 +24,5 @@
     <string name="cancel">Cancel</string>
     <string name="delete_confirmation_title">Are you sure you want to delete this %s?</string>
     <string name="delete_confirmation_message">This action cannot be undone</string>
+    <string name="delete_task">Delete Task</string>
 </resources>

@@ -1,12 +1,16 @@
 package com.example.taskweave.home.data.repository
 
 import com.example.taskweave.home.data.remote.dto.ProjectDto
+import com.example.taskweave.home.data.remote.dto.TaskDto
 import com.example.taskweave.home.data.remote.dto.toProject
+import com.example.taskweave.home.data.remote.dto.toTask
 import com.example.taskweave.home.domain.model.Project
+import com.example.taskweave.home.domain.model.Task
 import com.example.taskweave.home.domain.repository.ProjectRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import jakarta.inject.Inject
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -53,19 +57,19 @@ class ProjectRepositoryImpl @Inject constructor(
         awaitClose { listener.remove() }
     }
 
-//    override fun observeTasks(projectId: String): Flow<List<Task>> = callbackFlow {
-//        val listener = projectCollection.document(projectId).collection("tasks")
-//            .orderBy("completed", Query.Direction.ASCENDING)
-//            .orderBy("createdAt", Query.Direction.DESCENDING)
-//            .addSnapshotListener { snapshot, error ->
-//                if (error != null) return@addSnapshotListener
-//                val tasks = snapshot?.documents?.mapNotNull { doc ->
-//                    doc.toObject(TaskDto::class.java)?.copy(id = doc.id)?.toTask()
-//                } ?: emptyList()
-//                trySend(tasks)
-//            }
-//        awaitClose { listener.remove() }
-//    }
+    override fun observeTasks(projectId: String): Flow<List<Task>> = callbackFlow {
+        val listener = projectCollection.document(projectId).collection("tasks")
+            .orderBy("completed", Query.Direction.ASCENDING)
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) return@addSnapshotListener
+                val tasks = snapshot?.documents?.mapNotNull { doc ->
+                    doc.toObject(TaskDto::class.java)?.copy(id = doc.id)?.toTask()
+                } ?: emptyList()
+                trySend(tasks)
+            }
+        awaitClose { listener.remove() }
+    }
 
 
     override suspend fun createProject(name: String) {
@@ -99,57 +103,57 @@ class ProjectRepositoryImpl @Inject constructor(
     }
 
 
-//    override suspend fun createTask(projectId: String, name: String) {
-//        val projectRef = projectCollection.document(projectId)
-//        val taskRef = projectRef.collection("tasks").document()
-//
-//        val taskDto = TaskDto(
-//            id = taskRef.id,
-//            projectId = projectId,
-//            name = name,
-//            createdAt = System.currentTimeMillis(),
-//            updatedAt = System.currentTimeMillis()
-//        )
-//
-//        val batch = firebaseFirestore.batch()
-//        batch.set(taskRef, taskDto)
-//        batch.update(projectRef, "totalTaskCount", FieldValue.increment(1))
-//        batch.commit()
-//    }
-//
-//    override suspend fun deleteTask(projectId: String, taskId: String) {
-//        val projectRef = projectCollection.document(projectId)
-//        val taskRef = projectRef.collection("tasks").document(taskId)
-//        val isComplete = taskRef.get().await().getBoolean("completed") ?: false
-//
-//        val batch = firebaseFirestore.batch()
-//        batch.delete(taskRef)
-//        batch.update(projectRef, "totalTaskCount", FieldValue.increment(-1))
-//        if (isComplete) {
-//            batch.update(projectRef, "completedTaskCount", FieldValue.increment(-1))
-//        }
-//        batch.commit()
-//    }
-//
-//    override suspend fun renameTask(projectId: String, taskId: String, newName: String) {
-//        projectCollection.document(projectId).collection("tasks").document(taskId)
-//            .update(mapOf("name" to newName, "updatedAt" to System.currentTimeMillis()))
-//    }
-//
-//    override suspend fun toggleTask(projectId: String, taskId: String) {
-//        val projectRef = projectCollection.document(projectId)
-//        val taskRef = projectRef.collection("tasks").document(taskId)
-//
-//        val isCurrentlyCompleted = taskRef.get().await().getBoolean("completed") ?: false
-//        val newStatus = !isCurrentlyCompleted
-//
-//        val batch = firebaseFirestore.batch()
-//        batch.update(
-//            taskRef, mapOf("completed" to newStatus, "updatedAt" to System.currentTimeMillis())
-//        )
-//
-//        val incrementValue = if (newStatus) 1 else -1L
-//        batch.update(projectRef, "completedTaskCount", FieldValue.increment(incrementValue))
-//        batch.commit()
-//    }
+    override suspend fun createTask(projectId: String, name: String) {
+        val projectRef = projectCollection.document(projectId)
+        val taskRef = projectRef.collection("tasks").document()
+
+        val taskDto = TaskDto(
+            id = taskRef.id,
+            projectId = projectId,
+            name = name,
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+
+        val batch = firebaseFirestore.batch()
+        batch.set(taskRef, taskDto)
+        batch.update(projectRef, "totalTaskCount", FieldValue.increment(1))
+        batch.commit()
+    }
+
+    override suspend fun deleteTask(projectId: String, taskId: String) {
+        val projectRef = projectCollection.document(projectId)
+        val taskRef = projectRef.collection("tasks").document(taskId)
+        val isComplete = taskRef.get().await().getBoolean("completed") ?: false
+
+        val batch = firebaseFirestore.batch()
+        batch.delete(taskRef)
+        batch.update(projectRef, "totalTaskCount", FieldValue.increment(-1))
+        if (isComplete) {
+            batch.update(projectRef, "completedTaskCount", FieldValue.increment(-1))
+        }
+        batch.commit()
+    }
+
+    override suspend fun renameTask(projectId: String, taskId: String, newName: String) {
+        projectCollection.document(projectId).collection("tasks").document(taskId)
+            .update(mapOf("name" to newName, "updatedAt" to System.currentTimeMillis()))
+    }
+
+    override suspend fun toggleTask(projectId: String, taskId: String) {
+        val projectRef = projectCollection.document(projectId)
+        val taskRef = projectRef.collection("tasks").document(taskId)
+
+        val isCurrentlyCompleted = taskRef.get().await().getBoolean("completed") ?: false
+        val newStatus = !isCurrentlyCompleted
+
+        val batch = firebaseFirestore.batch()
+        batch.update(
+            taskRef, mapOf("completed" to newStatus, "updatedAt" to System.currentTimeMillis())
+        )
+
+        val incrementValue = if (newStatus) 1 else -1L
+        batch.update(projectRef, "completedTaskCount", FieldValue.increment(incrementValue))
+        batch.commit()
+    }
 }

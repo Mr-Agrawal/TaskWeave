@@ -60,7 +60,7 @@ class ProjectRepositoryImpl @Inject constructor(
     override fun observeTasks(projectId: String): Flow<List<Task>> = callbackFlow {
         val listener = projectCollection.document(projectId).collection("tasks")
             .orderBy("completed", Query.Direction.ASCENDING)
-            .orderBy("createdAt", Query.Direction.ASCENDING)
+            .orderBy("createdAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) return@addSnapshotListener
                 val tasks = snapshot?.documents?.mapNotNull { doc ->

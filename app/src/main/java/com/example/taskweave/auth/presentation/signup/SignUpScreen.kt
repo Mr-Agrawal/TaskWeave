@@ -1,4 +1,4 @@
-package com.example.taskweave.auth.presentation.login
+package com.example.tryfbfs.auth.presentation.signup
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
@@ -34,27 +34,32 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.taskweave.R
 import com.example.taskweave.auth.presentation.common.LoadingOverlay
+import com.example.taskweave.auth.presentation.signup.SignUpUiState
+import com.example.taskweave.auth.presentation.signup.SignUpViewModel
+
 
 @Composable
-fun LoginScreen(
-    loginViewModel: LoginViewModel, onNavigateToSignUp: () -> Unit, modifier: Modifier = Modifier
+fun SignUpScreen(
+    signUpViewModel: SignUpViewModel, onNavigateToLogin: () -> Unit, modifier: Modifier = Modifier
 ) {
-    val uiState = loginViewModel.uiState.collectAsState()
+    val uiState = signUpViewModel.uiState.collectAsState()
+
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background, modifier = modifier
+        containerColor = MaterialTheme.colorScheme.background,
+        modifier = modifier
     ) { paddingValues ->
         Box(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 24.dp)
         ) {
-            LoginContent(
+            SignUpContent(
                 uiState = uiState.value,
-                onEmailChange = loginViewModel::onEmailChange,
-                onPasswordChange = loginViewModel::onPasswordChange,
-                onNavigateToSignUp = onNavigateToSignUp,
-                login = loginViewModel::login,
+                onEmailChange = { signUpViewModel.onEmailChange(it) },
+                onPasswordChange = { signUpViewModel.onPasswordChange(it) },
+                onNavigateToLogin = onNavigateToLogin,
+                signUp = { signUpViewModel.signUp() },
                 modifier = Modifier.align(Alignment.Center)
             )
             if (uiState.value.isLoading) {
@@ -65,21 +70,21 @@ fun LoginScreen(
 }
 
 @Composable
-fun LoginContent(
-    uiState: LoginUiState,
+fun SignUpContent(
+    uiState: SignUpUiState,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    login: () -> Unit,
-    onNavigateToSignUp: () -> Unit,
+    onNavigateToLogin: () -> Unit,
+    signUp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isLoginEnabled = uiState.email.isNotBlank() && uiState.password.isNotBlank()
-
+    val isSignUpEnabled = uiState.email.isNotBlank() && uiState.password.isNotBlank()
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+
         Image(
             painter = painterResource(R.drawable.task_logo),
             contentDescription = null,
@@ -87,16 +92,17 @@ fun LoginContent(
             modifier = Modifier
                 .size(150.dp)
                 .padding(bottom = 16.dp)
-
         )
+
         Text(
-            text = stringResource(R.string.welcome_back),
+            text = stringResource(R.string.create_account),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
         )
+
         Text(
-            text = stringResource(R.string.login_to_continue),
+            text = stringResource(R.string.signup_to_get_started),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -105,52 +111,46 @@ fun LoginContent(
 
         OutlinedTextField(
             value = uiState.email,
-            onValueChange = onEmailChange,
+            onValueChange = { onEmailChange(it) },
+            enabled = !uiState.isLoading,
             label = { Text(stringResource(R.string.email)) },
             singleLine = true,
-            enabled = !uiState.isLoading,
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.medium,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email, imeAction = ImeAction.Next
             )
         )
-
         OutlinedTextField(
             value = uiState.password,
             onValueChange = { onPasswordChange(it) },
-            label = { Text(stringResource(R.string.password)) },
             enabled = !uiState.isLoading,
+            label = { Text(stringResource(R.string.enter_password)) },
             visualTransformation = PasswordVisualTransformation(),
-            shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.fillMaxWidth(),
-            keyboardActions = KeyboardActions(onDone = { login() }),
+            keyboardActions = KeyboardActions(onDone = { signUp() }),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password, imeAction = ImeAction.Done
             ),
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium
         )
         Spacer(modifier = Modifier.height(8.dp))
         Button(
-            onClick = login,
-            enabled = !uiState.isLoading && isLoginEnabled,
-            shape = MaterialTheme.shapes.medium,
+            onClick = { signUp() },
+            enabled = !uiState.isLoading && isSignUpEnabled,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
+            shape = MaterialTheme.shapes.medium
         ) {
             Text(
-                text = stringResource(R.string.login), style = MaterialTheme.typography.titleMedium
+                text = stringResource(R.string.signup),
+                style = MaterialTheme.typography.labelLarge
             )
         }
-        TextButton(
-            onClick = {}, enabled = !uiState.isLoading
-        ) {
-            Text(
-                text = stringResource(R.string.forgot_password)
-            )
-        }
+
         AnimatedVisibility(
-            visible = uiState.error != null,
+            visible = uiState.error != null
         ) {
             Text(
                 text = uiState.error.orEmpty(),
@@ -160,10 +160,9 @@ fun LoginContent(
         }
         Spacer(modifier = Modifier.height(32.dp))
         TextButton(
-            onClick = onNavigateToSignUp,
-        ) {
+            onClick = { onNavigateToLogin() }) {
             Text(
-                text = stringResource(R.string.do_not_have_account),
+                text = stringResource(R.string.already_have_account),
                 color = MaterialTheme.colorScheme.primary
             )
         }
